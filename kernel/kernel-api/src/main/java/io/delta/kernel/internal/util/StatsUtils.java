@@ -16,7 +16,6 @@
 package io.delta.kernel.internal.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.delta.kernel.exceptions.KernelException;
 import io.delta.kernel.statistics.DataFileStatistics;
 import java.io.IOException;
@@ -40,7 +39,7 @@ public class StatsUtils {
   public static Optional<DataFileStatistics> deserializeFromJson(String json) {
     JsonNode root;
     try {
-      root = new ObjectMapper().readTree(json);
+      root = JsonUtils.mapper().readTree(json);
     } catch (IOException e) {
       throw new KernelException(String.format("Failed to parse JSON string: %s", json), e);
     }

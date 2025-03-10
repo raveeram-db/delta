@@ -40,16 +40,16 @@ import java.util.Objects;
 
 /** Statistics about data file in a Delta Lake table. */
 public class DataFileStatistics {
-  private final long numRecords;
-  private final Map<Column, Literal> minValues;
-  private final Map<Column, Literal> maxValues;
-  private final Map<Column, Long> nullCounts;
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 
   public static final int MICROSECONDS_PER_SECOND = 1_000_000;
   public static final int NANOSECONDS_PER_MICROSECOND = 1_000;
 
-  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+  private final long numRecords;
+  private final Map<Column, Literal> minValues;
+  private final Map<Column, Literal> maxValues;
+  private final Map<Column, Long> nullCounts;
 
   /**
    * Create a new instance of {@link DataFileStatistics}. The minValues, maxValues, and nullCounts
@@ -141,25 +141,25 @@ public class DataFileStatistics {
    *   }
    * </pre>
    *
-   * @param dataSchema the optional data schema (optional). If provided, all min/max values and null
-   *     counts will be included and validated. If null, only numRecords will be serialized without
-   *     validation.
+   * @param physicalSchema the optional data schema (optional). If provided, all min/max values and
+   *     null counts will be included and validated. If null, only numRecords will be serialized
+   *     without validation.
    * @return a JSON representation of the statistics.
    * @throws KernelException if dataSchema is provided and there's a type mismatch between the
    *     Literal values and the expected types in the schema, or if an unsupported data type is
    *     found.
    */
-  public String serializeAsJson(StructType dataSchema) {
+  public String serializeAsJson(StructType physicalSchema) {
     return JsonUtils.generate(
         gen -> {
           gen.writeStartObject();
           gen.writeNumberField("numRecords", numRecords);
 
-          if (dataSchema != null) {
+          if (physicalSchema != null) {
             gen.writeObjectFieldStart("minValues");
             writeJsonValues(
                 gen,
-                dataSchema,
+                physicalSchema,
                 minValues,
                 new Column(new String[0]),
                 (g, v) -> writeJsonValue(g, v));
@@ -168,7 +168,7 @@ public class DataFileStatistics {
             gen.writeObjectFieldStart("maxValues");
             writeJsonValues(
                 gen,
-                dataSchema,
+                physicalSchema,
                 maxValues,
                 new Column(new String[0]),
                 (g, v) -> writeJsonValue(g, v));
@@ -176,7 +176,11 @@ public class DataFileStatistics {
 
             gen.writeObjectFieldStart("nullCounts");
             writeJsonValues(
-                gen, dataSchema, nullCounts, new Column(new String[0]), (g, v) -> g.writeNumber(v));
+                gen,
+                physicalSchema,
+                nullCounts,
+                new Column(new String[0]),
+                (g, v) -> g.writeNumber(v));
             gen.writeEndObject();
           }
 

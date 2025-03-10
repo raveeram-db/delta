@@ -78,14 +78,14 @@ public class AddFile extends RowBackedAction {
    * partition values.
    */
   public static AddFile convertDataFileStatus(
-      StructType tableSchema,
+      StructType physicalSchema,
       URI tableRoot,
       DataFileStatus dataFileStatus,
       Map<String, Literal> partitionValues,
       boolean dataChange) {
     Row row =
         createAddFileRow(
-            tableSchema,
+            physicalSchema,
             relativizePath(new Path(dataFileStatus.getPath()), tableRoot).toUri().toString(),
             serializePartitionMap(partitionValues),
             dataFileStatus.getSize(),
@@ -102,7 +102,7 @@ public class AddFile extends RowBackedAction {
 
   /** Utility to generate an 'AddFile' row from the given fields. */
   public static Row createAddFileRow(
-      StructType tableSchema,
+      StructType physicalSchema,
       String path,
       MapValue partitionValues,
       long size,
@@ -130,7 +130,7 @@ public class AddFile extends RowBackedAction {
     defaultRowCommitVersion.ifPresent(
         version -> fieldMap.put(FULL_SCHEMA.indexOf("defaultRowCommitVersion"), version));
     stats.ifPresent(
-        stat -> fieldMap.put(FULL_SCHEMA.indexOf("stats"), stat.serializeAsJson(tableSchema)));
+        stat -> fieldMap.put(FULL_SCHEMA.indexOf("stats"), stat.serializeAsJson(physicalSchema)));
 
     return new GenericRow(FULL_SCHEMA, fieldMap);
   }

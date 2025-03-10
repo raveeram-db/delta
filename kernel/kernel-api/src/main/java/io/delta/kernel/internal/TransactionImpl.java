@@ -121,7 +121,14 @@ public class TransactionImpl implements Transaction {
 
   @Override
   public Row getTransactionState(Engine engine) {
-    return TransactionStateRow.of(metadata, dataPath.toString());
+    // Retrieve the column mapping mode from the configuration
+    ColumnMapping.ColumnMappingMode mappingMode =
+        ColumnMapping.getColumnMappingMode(metadata.getConfiguration());
+
+    StructType physicalSchema =
+        ColumnMapping.convertToPhysicalSchema(metadata.getSchema(), getSchema(engine), mappingMode);
+
+    return TransactionStateRow.of(metadata, dataPath.toString(), physicalSchema);
   }
 
   @Override
@@ -500,8 +507,7 @@ public class TransactionImpl implements Transaction {
 
     // Get the list of partition columns to exclude
     Set<String> partitionColumns =
-        TransactionStateRow.getPartitionColumnsList(transactionState).stream()
-            .collect(Collectors.toSet());
+        new HashSet<>(TransactionStateRow.getPartitionColumnsList(transactionState));
 
     // Collect the leaf-level columns for statistics calculation.
     // This call selects only the first 'numIndexedCols' leaf columns from the logical schema,
@@ -522,6 +528,6 @@ public class TransactionImpl implements Transaction {
     // would be: [col1, col2]. If 'col1' were a partition column, the returned list would be:
     // [col2, col3.a] (assuming col3.a is encountered before col3.b).
     return SchemaUtils.collectLeafColumns(
-        TransactionStateRow.getLogicalSchema(transactionState), partitionColumns, numIndexedCols);
+        TransactionStateRow.getPhysicalSchema(transactionState), partitionColumns, numIndexedCols);
   }
 }

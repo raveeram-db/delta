@@ -215,7 +215,7 @@ public interface Transaction {
           }
           AddFile addFileRow =
               AddFile.convertDataFileStatus(
-                  TransactionStateRow.getLogicalSchema(transactionState),
+                  TransactionStateRow.getPhysicalSchema(transactionState),
                   tableRoot,
                   dataFileStatus,
                   ((DataWriteContextImpl) dataWriteContext).getPartitionValues(),

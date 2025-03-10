@@ -203,7 +203,8 @@ public class SchemaUtils {
 
   /**
    * Collects all leaf columns from the given schema (including flattened columns only for
-   * StructTypes), up to maxColumns.
+   * StructTypes), up to maxColumns. NOTE: If maxColumns = -1, we collect ALL leaf columns in the
+   * schema.
    */
   public static List<Column> collectLeafColumns(
       StructType schema, Set<String> excludedColumns, int maxColumns) {
@@ -321,8 +322,9 @@ public class SchemaUtils {
       Set<String> excludedColumns,
       List<Column> result,
       int maxColumns) {
+    boolean hasLimit = maxColumns != -1;
     for (StructField field : schema.fields()) {
-      if (result.size() >= maxColumns) {
+      if (hasLimit && result.size() >= maxColumns) {
         return;
       }
 
