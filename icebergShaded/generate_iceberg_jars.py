@@ -65,6 +65,10 @@ def iceberg_jars_exists():
     return True
 
 
+def iceberg_src_exists():
+    return path.exists(iceberg_src_dir) and path.isdir(iceberg_src_dir)
+
+
 def prepare_iceberg_source():
     with WorkingDirectory(iceberg_root_dir):
         print(">>> Cloning Iceberg repo")
@@ -117,7 +121,7 @@ def generate_iceberg_jars():
         results = list(filter(lambda result: all(x not in result for x in ["tests.jar", "sources.jar", "javadoc.jar"]), results))
 
         if len(results) == 0:
-            raise Exception("Could not find the jar: " + compled_jar_rel_glob_pattern)
+            raise Exception("Could not find the jar: " + compiled_jar_rel_glob_pattern)
         if len(results) > 1:
             raise Exception("More jars created than expected: " + str(results))
 
@@ -184,6 +188,10 @@ if __name__ == "__main__":
         help="Force the generation even if already generated, useful for testing.")
     args = parser.parse_args()
 
-    if args.force or not iceberg_jars_exists():
+    # Check if we need to prepare the source
+    if args.force or not iceberg_src_exists():
         prepare_iceberg_source()
+    
+    # Check if we need to generate the JARs
+    if args.force or not iceberg_jars_exists():
         generate_iceberg_jars()
