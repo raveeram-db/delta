@@ -197,16 +197,16 @@ if __name__ == "__main__":
         help="Force the generation even if already generated, useful for testing.")
     args = parser.parse_args()
 
-    # Check if we need to prepare the source
-    if args.force:
-        # If force flag is set, clean and re-clone
-        prepare_iceberg_source()
-    elif not iceberg_src_exists():
-        # If directory doesn't exist, just clone (no need to clean)
-        clone_iceberg_source()
-        
-        # Continue with source preparation
-        configure_and_patch_iceberg_source()
+    # Always prepare the source
+    prepare_iceberg_source()
+    
+    # After cloning and configuring, replace build.gradle with custom version
+    custom_build_gradle = os.path.expanduser("~/fixed/build.gradle")
+    if os.path.exists(custom_build_gradle):
+        print(">>> Replacing build.gradle with custom version from %s" % custom_build_gradle)
+        shutil.copyfile(custom_build_gradle, path.join(iceberg_src_dir, "build.gradle"))
+    else:
+        print(">>> Warning: Custom build.gradle not found at %s" % custom_build_gradle)
     
     # Check if we need to generate the JARs
     if args.force or not iceberg_jars_exists():
