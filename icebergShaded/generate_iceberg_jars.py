@@ -69,15 +69,19 @@ def iceberg_src_exists():
     return path.exists(iceberg_src_dir) and path.isdir(iceberg_src_dir)
 
 
-def prepare_iceberg_source():
+def clean_iceberg_source():
     with WorkingDirectory(iceberg_root_dir):
-        print(">>> Cloning Iceberg repo")
+        print(">>> Cleaning up Iceberg repo")
         shutil.rmtree(iceberg_src_dir_name, ignore_errors=True)
 
+def clone_iceberg_source():
+    with WorkingDirectory(iceberg_root_dir):
+        print(">>> Cloning Iceberg repo")
         # We just want the shallowest, smallest iceberg clone. We will check out the commit later.
         run_cmd("git clone --depth 1 --branch %s https://github.com/apache/iceberg.git %s" %
                 (iceberg_src_branch, iceberg_src_dir_name))
 
+def configure_and_patch_iceberg_source():
     with WorkingDirectory(iceberg_src_dir):
         run_cmd("git config user.email \"<>\"")
         run_cmd("git config user.name \"Anonymous\"")
@@ -95,6 +99,11 @@ def prepare_iceberg_source():
             run_cmd("git apply %s" % patch_file)
             run_cmd("git add .")
             run_cmd("git commit -a -m 'applied %s'" % path.basename(patch_file))
+
+def prepare_iceberg_source():
+    clean_iceberg_source()
+    clone_iceberg_source()
+    configure_and_patch_iceberg_source()
 
 
 def generate_iceberg_jars():
@@ -189,8 +198,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Check if we need to prepare the source
-    if args.force or not iceberg_src_exists():
+    if args.force:
+        # If force flag is set, clean and re-clone
         prepare_iceberg_source()
+    elif not iceberg_src_exists():
+        # If directory doesn't exist, just clone (no need to clean)
+        clone_iceberg_source()
+        
+        # Continue with source preparation
+        configure_and_patch_iceberg_source()
     
     # Check if we need to generate the JARs
     if args.force or not iceberg_jars_exists():
